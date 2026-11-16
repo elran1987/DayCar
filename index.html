@@ -10,11 +10,14 @@
         @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Rubik', sans-serif; }
         
+        /* GPU Accelerated Sticky to prevent mobile flickering */
         .sticky-col {
             position: sticky;
             right: 0;
             z-index: 40;
             background-color: #f8fafc !important;
+            transform: translateZ(0);
+            will-change: transform;
         }
         .sticky-corner {
             position: sticky;
@@ -22,12 +25,15 @@
             right: 0;
             z-index: 60;
             background-color: #e2e8f0 !important;
+            transform: translateZ(0);
+            will-change: transform;
         }
         .sticky-header {
             position: sticky;
             top: 0;
             z-index: 50;
             background-color: #f1f5f9;
+            transform: translateZ(0);
         }
         .custom-scrollbar::-webkit-scrollbar {
             height: 8px;
@@ -201,7 +207,7 @@
 
         function initData() {
             try {
-                const saved = localStorage.getItem('daycare_data_v10');
+                const saved = localStorage.getItem('daycare_data_v12');
                 if (saved) {
                     appData = JSON.parse(saved);
                     if (appData && Object.keys(appData).length === initialChildren.length) {
@@ -221,7 +227,7 @@
         }
 
         function saveToStorage(showNotification = true) {
-            localStorage.setItem('daycare_data_v10', JSON.stringify(appData));
+            localStorage.setItem('daycare_data_v12', JSON.stringify(appData));
             if (showNotification) {
                 showToast('נשמר אוטומטית');
             }
@@ -240,7 +246,7 @@
 
         function resetDayData() {
             if (confirm('האם לאפס את כל הנתונים של היום?')) {
-                localStorage.removeItem('daycare_data_v10');
+                localStorage.removeItem('daycare_data_v12');
                 appData = buildInitialData();
                 saveToStorage(false);
                 render();
@@ -317,6 +323,15 @@
             }
         }
 
+        function removePhoto(id, event) {
+            event.stopPropagation();
+            if (confirm('האם להסיר את התמונה?')) {
+                appData[id].photo = '';
+                saveToStorage(true);
+                render();
+            }
+        }
+
         function scrollTable(direction) {
             const container = document.getElementById('table-scroll-container');
             const scrollAmount = 280;
@@ -340,7 +355,11 @@
 
                 const avatarContent = child.photo 
                     ? `<img src="${child.photo}" class="w-full h-full object-cover rounded-full" />`
-                    : `<span class="text-lg">👶</span>`;
+                    : `<span class="text-xl">👶</span>`;
+
+                const removeBtnHtml = child.photo 
+                    ? `<button onclick="removePhoto(${child.id}, event)" class="absolute -top-1 -left-1 bg-rose-500 text-white rounded-full w-4 h-4 text-[9px] flex items-center justify-center shadow hover:bg-rose-600 z-10" title="הסר תמונה">×</button>` 
+                    : '';
 
                 const card = document.createElement('div');
                 card.className = "bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col justify-between";
@@ -349,14 +368,18 @@
                     <div class="p-5">
                         <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
                             <div class="flex items-center gap-3">
-                                <div class="relative w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center shadow-sm border border-indigo-100 overflow-hidden cursor-pointer group" title="לחץ להעלאת תמונה">
+                                <div class="relative w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center shadow-sm border-2 border-indigo-100 overflow-hidden cursor-pointer group" title="לחץ להעלאת או החלפת תמונה">
                                     ${avatarContent}
-                                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-[10px]">
+                                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs">
                                         <i class="fa-solid fa-camera"></i>
                                     </div>
                                     <input type="file" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handlePhotoUpload(${child.id}, this)">
                                 </div>
-                                <h3 class="font-bold text-lg text-slate-800">${child.name}</h3>
+                                ${removeBtnHtml}
+                                <div>
+                                    <h3 class="font-bold text-lg text-slate-800 leading-snug">${child.name}</h3>
+                                    <span class="text-[11px] text-indigo-600 font-medium">החלף תמונה בלחיצה</span>
+                                </div>
                             </div>
                             <span class="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 font-medium">#${child.id + 1}</span>
                         </div>
@@ -509,7 +532,7 @@
 
             childrenArr.forEach(c => {
                 const avatarHtml = c.photo 
-                    ? `<img src="${c.photo}" class="w-6 h-6 object-cover rounded-full inline-block ml-1 align-middle" />` 
+                    ? `<img src="${c.photo}" class="w-6 h-6 object-cover rounded-full inline-block ml-1 align-middle border border-indigo-200" />` 
                     : `<span class="text-xs inline-block ml-1">👶</span>`;
 
                 const th = document.createElement('th');
