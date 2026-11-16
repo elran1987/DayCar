@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מעקב יומי - צהרון</title>
+    <title>החממה של איתי - כיתת ניצן | מעקב יומי</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -24,7 +24,7 @@
             background-color: #e2e8f0;
         }
         .custom-scrollbar::-webkit-scrollbar {
-            height: 10px;
+            height: 8px;
             width: 8px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
@@ -35,18 +35,15 @@
             background: #cbd5e1;
             border-radius: 4px;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 antialiased min-h-screen pb-12">
 
     <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 transform transition-all duration-300 opacity-0 pointer-events-none translate-y-4">
-        <div class="bg-emerald-600 text-white px-6 py-3 rounded-full shadow-lg flex items-center space-x-2 space-x-reverse font-medium text-sm">
-            <i class="fa-solid fa-circle-check text-lg"></i>
-            <span id="toast-msg">הנתונים נשמרו בהצלחה!</span>
+        <div class="bg-emerald-600 text-white px-5 py-2.5 rounded-full shadow-lg flex items-center space-x-2 space-x-reverse font-medium text-xs">
+            <i class="fa-solid fa-circle-check text-base"></i>
+            <span id="toast-msg">הנתונים נשמרו אוטומטית</span>
         </div>
     </div>
 
@@ -55,10 +52,10 @@
         <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center space-x-3 space-x-reverse">
                 <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-sm">
-                    <i class="fa-solid fa-child-reaching text-xl"></i>
+                    <i class="fa-solid fa-seedling text-xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold text-slate-900 leading-tight">מעקב יומי - צהרון</h1>
+                    <h1 class="text-xl font-bold text-slate-900 leading-tight">החממה של איתי - כיתת ניצן</h1>
                     <div class="flex items-center gap-2 mt-0.5">
                         <span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-md text-xs font-bold border border-indigo-100">
                             <i class="fa-regular fa-calendar-days"></i>
@@ -82,10 +79,10 @@
 
                 <!-- Role Mode Toggle -->
                 <div class="bg-slate-100 p-1 rounded-xl flex items-center border border-slate-200">
-                    <button id="btn-role-parents" onclick="setRole('parents')" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all bg-amber-500 text-white shadow-sm">
+                    <button id="btn-role-parents" onclick="setRole('parents')" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm">
                         <i class="fa-solid fa-house-user"></i> מוד הורים
                     </button>
-                    <button id="btn-role-staff" onclick="setRole('staff')" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-slate-600 hover:text-slate-900">
+                    <button id="btn-role-staff" onclick="setRole('staff')" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm">
                         <i class="fa-solid fa-clipboard-user"></i> מוד צוות
                     </button>
                 </div>
@@ -101,16 +98,12 @@
     <main class="max-w-7xl mx-auto px-4 py-6">
 
         <!-- Role Banner -->
-        <div id="role-banner" class="mb-6 p-4 rounded-xl border flex items-center justify-between bg-amber-50 border-amber-200 text-amber-900">
+        <div id="role-banner" class="mb-6 p-4 rounded-xl border flex items-center justify-between text-amber-900">
             <div class="flex items-center gap-3">
-                <i class="fa-solid fa-circle-info text-amber-600 text-lg"></i>
-                <span class="text-sm font-medium" id="role-banner-text">
-                    מצב דיווח הורים: ניתן לעדכן שעת התעוררות ואוכל בבית בלבד.
-                </span>
+                <i class="fa-solid fa-circle-info text-lg" id="role-banner-icon"></i>
+                <span class="text-sm font-medium" id="role-banner-text"></span>
             </div>
-            <button onclick="saveAllData()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow transition-all flex items-center gap-2">
-                <i class="fa-solid fa-floppy-disk"></i> שמור את כל הדיווחים
-            </button>
+            <span class="text-xs font-semibold opacity-75 hidden sm:inline">שמירה אוטומטית פעילה ✓</span>
         </div>
 
         <!-- SEARCH / FILTER (Card View Only) -->
@@ -140,11 +133,11 @@
             </div>
 
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div id="table-scroll-container" class="overflow-x-auto custom-scrollbar max-h-[75vh]">
+                <div id="table-scroll-container" class="overflow-x-auto custom-scrollbar max-h-[70vh]">
                     <table class="w-full border-collapse text-right text-xs">
                         <thead>
                             <tr id="table-header-tr" class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
-                                <th class="p-3 w-40 min-w-[160px] sticky-corner border-l border-slate-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)] text-center">
+                                <th class="p-3 w-36 min-w-[140px] sticky-corner border-l border-slate-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)] text-center">
                                     קטגוריה / ילד
                                 </th>
                             </tr>
@@ -154,18 +147,12 @@
                     </table>
                 </div>
             </div>
-            
-            <div class="mt-4 flex justify-end">
-                <button onclick="saveAllData()" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center gap-2">
-                    <i class="fa-solid fa-floppy-disk text-base"></i> שמור שינויים
-                </button>
-            </div>
         </div>
 
     </main>
 
     <script>
-        const initialChildren = ["נריה", "דין", "בר", "שקד", "הלני","לביא", "תמרה", "נטע", "עדי", "גל", "אי״ל", "ליה", "איתי", "ניב", "ריי"];
+        const initialChildren = ["נריה", "דין", "בר", "שקד", "הלני", "לביא", "תמרה", "נטע", "עדי", "גל", "אי״ל", "ליה", "איתי", "ניב", "ריי"];
         
         let currentRole = localStorage.getItem('daycare_role') || 'parents'; 
         let currentView = 'cards';   
@@ -173,13 +160,12 @@
 
         // Display Date & Day
         const now = new Date();
-        const dateStr = now.toLocaleDateString('he-IL', {
+        document.getElementById('current-date').innerText = now.toLocaleDateString('he-IL', {
             weekday: 'long',
             day: 'numeric',
             month: 'long',
             year: 'numeric'
         });
-        document.getElementById('current-date').innerText = dateStr;
 
         function buildInitialData() {
             const data = {};
@@ -208,10 +194,14 @@
 
         function initData() {
             try {
-                const saved = localStorage.getItem('daycare_data_v5');
+                const saved = localStorage.getItem('daycare_data_v8');
                 if (saved) {
                     appData = JSON.parse(saved);
-                    if (!appData || Object.keys(appData).length === 0) {
+                    if (appData && Object.keys(appData).length === initialChildren.length) {
+                        initialChildren.forEach((name, idx) => {
+                            if (appData[idx]) appData[idx].name = name;
+                        });
+                    } else {
                         appData = buildInitialData();
                     }
                 } else {
@@ -220,11 +210,14 @@
             } catch (e) {
                 appData = buildInitialData();
             }
-            saveToStorage();
+            saveToStorage(false);
         }
 
-        function saveToStorage() {
-            localStorage.setItem('daycare_data_v5', JSON.stringify(appData));
+        function saveToStorage(showNotification = true) {
+            localStorage.setItem('daycare_data_v8', JSON.stringify(appData));
+            if (showNotification) {
+                showToast('נשמר אוטומטית');
+            }
         }
 
         function showToast(msg = 'הנתונים נשמרו בהצלחה!') {
@@ -235,19 +228,14 @@
             setTimeout(() => {
                 toast.classList.remove('opacity-100', 'translate-y-0');
                 toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
-            }, 2500);
-        }
-
-        function saveAllData() {
-            saveToStorage();
-            showToast('כל השינויים נשמרו בהצלחה!');
+            }, 2000);
         }
 
         function resetDayData() {
             if (confirm('האם לאפס את כל הנתונים של היום?')) {
-                localStorage.removeItem('daycare_data_v5');
+                localStorage.removeItem('daycare_data_v8');
                 appData = buildInitialData();
-                saveToStorage();
+                saveToStorage(false);
                 render();
                 showToast('הנתונים אופסו בהצלחה');
             }
@@ -260,17 +248,20 @@
             const btnP = document.getElementById('btn-role-parents');
             const btnS = document.getElementById('btn-role-staff');
             const banner = document.getElementById('role-banner');
+            const bannerIcon = document.getElementById('role-banner-icon');
             const bannerText = document.getElementById('role-banner-text');
 
             if (role === 'parents') {
                 btnP.className = "px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all bg-amber-500 text-white shadow-sm";
-                btnS.className = "px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-slate-600 hover:text-slate-900";
+                btnS.className = "px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-slate-600 hover:text-slate-900 bg-white";
                 banner.className = "mb-6 p-4 rounded-xl border flex items-center justify-between bg-amber-50 border-amber-200 text-amber-900";
+                bannerIcon.className = "fa-solid fa-circle-info text-amber-600 text-lg";
                 bannerText.innerText = "מצב דיווח הורים: ניתן לעדכן שעת התעוררות ואוכל בבית בלבד.";
             } else {
                 btnS.className = "px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all bg-indigo-600 text-white shadow-sm";
-                btnP.className = "px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-slate-600 hover:text-slate-900";
+                btnP.className = "px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-slate-600 hover:text-slate-900 bg-white";
                 banner.className = "mb-6 p-4 rounded-xl border flex items-center justify-between bg-indigo-50 border-indigo-200 text-indigo-900";
+                bannerIcon.className = "fa-solid fa-circle-info text-indigo-600 text-lg";
                 bannerText.innerText = "מצב דיווח צוות: גישה מלאה לעדכון ארוחות, שעות שינה והחלפות חיתול.";
             }
             render();
@@ -303,13 +294,13 @@
         function updateField(id, field, value) {
             if (appData[id]) {
                 appData[id][field] = value;
-                saveToStorage();
+                saveToStorage(true);
             }
         }
 
         function scrollTable(direction) {
             const container = document.getElementById('table-scroll-container');
-            const scrollAmount = 300;
+            const scrollAmount = 280;
             if (direction === 'left') {
                 container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
             } else {
@@ -335,8 +326,8 @@
                     <div class="p-5">
                         <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-base">
-                                    ${child.name.charAt(0)}
+                                <div class="w-10 h-10 rounded-full bg-indigo-50 text-xl flex items-center justify-center shadow-sm border border-indigo-100">
+                                    👶
                                 </div>
                                 <h3 class="font-bold text-lg text-slate-800">${child.name}</h3>
                             </div>
@@ -376,7 +367,9 @@
                                     <span><i class="fa-solid fa-sun text-indigo-600 ml-1"></i> מעקב במהלך היום (צוות)</span>
                                 </div>
 
-                                ${renderMealRow(child, 'breakfastStatus', 'breakfastNote', 'ארוחת בוקר', isParentDisabled)}
+                                <div id="card-breakfast-${child.id}">
+                                    ${renderMealHtml(child, 'breakfastStatus', 'breakfastNote', 'ארוחת בוקר', isParentDisabled)}
+                                </div>
                                 
                                 <div class="pt-1 border-t border-indigo-100/60">
                                     <label class="block text-[11px] text-slate-500 mb-1">שנת בוקר (מ- עד)</label>
@@ -390,7 +383,9 @@
                                     </div>
                                 </div>
 
-                                ${renderMealRow(child, 'lunchStatus', 'lunchNote', 'ארוחת צהריים', isParentDisabled)}
+                                <div id="card-lunch-${child.id}">
+                                    ${renderMealHtml(child, 'lunchStatus', 'lunchNote', 'ארוחת צהריים', isParentDisabled)}
+                                </div>
 
                                 <div class="pt-1 border-t border-indigo-100/60">
                                     <label class="block text-[11px] text-slate-500 mb-1">שנת צהריים (מ- עד)</label>
@@ -407,41 +402,37 @@
                                 <div class="pt-1 border-t border-indigo-100/60">
                                     <label class="block text-[11px] text-slate-500 mb-1">החלפות חיתול</label>
                                     <div class="flex items-center gap-1">
-                                        <button onclick="updateField(${child.id}, 'diapers', Math.max(0, ${(child.diapers || 0) - 1})); renderCards();" ${isParentDisabled ? 'disabled' : ''} class="px-2 py-1 bg-slate-200 rounded font-bold text-xs hover:bg-slate-300 disabled:opacity-50">-</button>
-                                        <span class="px-3 py-1 font-bold text-xs bg-white rounded border border-slate-200 flex-1 text-center">${child.diapers || 0}</span>
-                                        <button onclick="updateField(${child.id}, 'diapers', ${(child.diapers || 0) + 1}); renderCards();" ${isParentDisabled ? 'disabled' : ''} class="px-2 py-1 bg-indigo-600 text-white rounded font-bold text-xs hover:bg-indigo-700 disabled:opacity-50">+</button>
+                                        <button onclick="adjustDiapers(${child.id}, -1)" ${isParentDisabled ? 'disabled' : ''} class="px-2.5 py-1 bg-slate-200 rounded font-bold text-xs hover:bg-slate-300 disabled:opacity-50">-</button>
+                                        <span id="diapers-val-${child.id}" class="px-3 py-1 font-bold text-xs bg-white rounded border border-slate-200 flex-1 text-center">${child.diapers || 0}</span>
+                                        <button onclick="adjustDiapers(${child.id}, 1)" ${isParentDisabled ? 'disabled' : ''} class="px-2.5 py-1 bg-indigo-600 text-white rounded font-bold text-xs hover:bg-indigo-700 disabled:opacity-50">+</button>
                                     </div>
                                 </div>
 
-                                ${renderMealRow(child, 'snackStatus', 'snackNote', 'ארוחת ארבע', isParentDisabled)}
+                                <div id="card-snack-${child.id}">
+                                    ${renderMealHtml(child, 'snackStatus', 'snackNote', 'ארוחת ארבע', isParentDisabled)}
+                                </div>
 
                             </div>
                         </div>
-                    </div>
-
-                    <div class="p-3 bg-slate-50 border-t border-slate-100 text-left">
-                        <button onclick="saveAllData()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-check"></i> שמור דיווח
-                        </button>
                     </div>
                 `;
                 container.appendChild(card);
             });
         }
 
-        function renderMealRow(child, statusKey, noteKey, title, disabled) {
+        function renderMealHtml(child, statusKey, noteKey, title, disabled) {
             const currentStatus = child[statusKey];
             return `
                 <div class="space-y-1">
                     <div class="flex items-center justify-between">
                         <span class="text-[11px] font-semibold text-slate-700">${title}</span>
                         <div class="flex gap-1">
-                            <button onclick="updateField(${child.id}, '${statusKey}', 'V'); renderCards();" ${disabled ? 'disabled' : ''} 
-                                class="w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${currentStatus === 'V' ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}">✓</button>
-                            <button onclick="updateField(${child.id}, '${statusKey}', '1/2'); renderCards();" ${disabled ? 'disabled' : ''} 
-                                class="w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${currentStatus === '1/2' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}">½</button>
-                            <button onclick="updateField(${child.id}, '${statusKey}', 'X'); renderCards();" ${disabled ? 'disabled' : ''} 
-                                class="w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${currentStatus === 'X' ? 'bg-rose-500 text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}">✕</button>
+                            <button type="button" onclick="setMealStatus(${child.id}, '${statusKey}', 'V')" ${disabled ? 'disabled' : ''} 
+                                class="w-6 h-6 rounded flex items-center justify-center text-xs font-bold transition-all ${currentStatus === 'V' ? 'bg-emerald-500 text-white shadow-sm' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}">✓</button>
+                            <button type="button" onclick="setMealStatus(${child.id}, '${statusKey}', '1/2')" ${disabled ? 'disabled' : ''} 
+                                class="w-6 h-6 rounded flex items-center justify-center text-xs font-bold transition-all ${currentStatus === '1/2' ? 'bg-amber-500 text-white shadow-sm' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}">½</button>
+                            <button type="button" onclick="setMealStatus(${child.id}, '${statusKey}', 'X')" ${disabled ? 'disabled' : ''} 
+                                class="w-6 h-6 rounded flex items-center justify-center text-xs font-bold transition-all ${currentStatus === 'X' ? 'bg-rose-500 text-white shadow-sm' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}">✕</button>
                         </div>
                     </div>
                     <input type="text" placeholder="הערה ל${title}..." value="${child[noteKey] || ''}" ${disabled ? 'disabled' : ''} 
@@ -451,12 +442,37 @@
             `;
         }
 
+        function setMealStatus(childId, statusKey, val) {
+            if (appData[childId][statusKey] === val) {
+                appData[childId][statusKey] = ''; 
+            } else {
+                appData[childId][statusKey] = val;
+            }
+            saveToStorage(true);
+            if (currentView === 'cards') {
+                renderCards();
+            } else {
+                renderTable();
+            }
+        }
+
+        function adjustDiapers(childId, delta) {
+            let current = appData[childId].diapers || 0;
+            current = Math.max(0, current + delta);
+            appData[childId].diapers = current;
+            saveToStorage(true);
+            const span = document.getElementById(`diapers-val-${childId}`);
+            if (span) span.innerText = current;
+            const tableSpan = document.getElementById(`table-diapers-val-${childId}`);
+            if (tableSpan) tableSpan.innerText = current;
+        }
+
         function renderTable() {
             const headerTr = document.getElementById('table-header-tr');
             const body = document.getElementById('table-body');
 
             headerTr.innerHTML = `
-                <th class="p-3 w-40 min-w-[160px] sticky-corner border-l border-slate-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)] text-center">
+                <th class="p-3 w-36 min-w-[140px] sticky-corner border-l border-slate-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)] text-center">
                     קטגוריה / ילד
                 </th>
             `;
@@ -466,11 +482,11 @@
 
             childrenArr.forEach(c => {
                 const th = document.createElement('th');
-                th.className = "p-3 min-w-[150px] w-[150px] text-center font-bold text-indigo-900 border-l border-slate-200 bg-slate-100";
+                th.className = "p-3 min-w-[130px] w-[130px] text-center font-bold text-indigo-900 border-l border-slate-200 bg-slate-100";
                 th.innerHTML = `
                     <div class="flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-pen-nib text-slate-400 text-[10px]"></i>
-                        <span class="text-sm">${c.name}</span>
+                        <span class="text-sm">👶</span>
+                        <span class="text-xs">${c.name}</span>
                     </div>
                 `;
                 headerTr.appendChild(th);
@@ -483,7 +499,7 @@
                 { title: 'שעת התעוררות', isParent: true, renderCell: (c) => `
                     <input type="time" value="${c.wakeTime || ''}" ${isStaffDisabled ? 'disabled' : ''} 
                         onchange="updateField(${c.id}, 'wakeTime', this.value)"
-                        class="w-full px-2 py-1 bg-amber-50/50 border border-amber-200 rounded text-center text-xs font-bold focus:ring-1 focus:ring-amber-500">
+                        class="w-full px-1 py-1 bg-amber-50/50 border border-amber-200 rounded text-center text-xs font-bold focus:ring-1 focus:ring-amber-500">
                 `},
                 { title: 'אוכל בבית (שעה ופרוט)', isParent: true, renderCell: (c) => `
                     <div class="space-y-1">
@@ -492,7 +508,7 @@
                             class="w-full px-1 py-0.5 border border-amber-200 rounded text-center text-xs font-semibold">
                         <input type="text" placeholder="מה אכל..." value="${c.homeFoodText || ''}" ${isStaffDisabled ? 'disabled' : ''} 
                             onchange="updateField(${c.id}, 'homeFoodText', this.value)"
-                            class="w-full px-1.5 py-0.5 border border-amber-200 rounded text-[11px]">
+                            class="w-full px-1 py-0.5 border border-amber-200 rounded text-[10px]">
                     </div>
                 `},
                 { title: 'ארוחת בוקר', isParent: false, renderCell: (c) => renderTableMealCell(c, 'breakfastStatus', 'breakfastNote', isParentDisabled) },
@@ -519,9 +535,9 @@
                 `},
                 { title: 'החלפות חיתול', isParent: false, renderCell: (c) => `
                     <div class="flex items-center justify-center gap-1">
-                        <button onclick="updateField(${c.id}, 'diapers', Math.max(0, ${(c.diapers || 0) - 1})); renderTable();" ${isParentDisabled ? 'disabled' : ''} class="w-5 h-5 bg-slate-200 rounded font-bold text-xs flex items-center justify-center">-</button>
-                        <span class="font-bold text-xs w-6 text-center">${c.diapers || 0}</span>
-                        <button onclick="updateField(${c.id}, 'diapers', ${(c.diapers || 0) + 1}); renderTable();" ${isParentDisabled ? 'disabled' : ''} class="w-5 h-5 bg-indigo-600 text-white rounded font-bold text-xs flex items-center justify-center">+</button>
+                        <button type="button" onclick="adjustDiapers(${c.id}, -1)" ${isParentDisabled ? 'disabled' : ''} class="w-5 h-5 bg-slate-200 rounded font-bold text-xs flex items-center justify-center">-</button>
+                        <span id="table-diapers-val-${c.id}" class="font-bold text-xs w-5 text-center">${c.diapers || 0}</span>
+                        <button type="button" onclick="adjustDiapers(${c.id}, 1)" ${isParentDisabled ? 'disabled' : ''} class="w-5 h-5 bg-indigo-600 text-white rounded font-bold text-xs flex items-center justify-center">+</button>
                     </div>
                 `},
                 { title: 'ארוחת ארבע', isParent: false, renderCell: (c) => renderTableMealCell(c, 'snackStatus', 'snackNote', isParentDisabled) }
@@ -532,18 +548,18 @@
                 tr.className = "hover:bg-slate-50/80 transition-colors";
 
                 const tdTitle = document.createElement('td');
-                tdTitle.className = `p-3 font-semibold text-xs sticky-col border-l border-slate-200 shadow-[2px_0_5px_rgba(0,0,0,0.03)] ${rowDef.isParent ? 'bg-amber-50/80 text-amber-900' : 'bg-slate-50 text-slate-700'}`;
+                tdTitle.className = `p-2.5 font-semibold text-xs sticky-col border-l border-slate-200 shadow-[2px_0_5px_rgba(0,0,0,0.03)] ${rowDef.isParent ? 'bg-amber-50/90 text-amber-900' : 'bg-slate-50 text-slate-700'}`;
                 tdTitle.innerHTML = `
-                    <div class="flex items-center gap-1.5">
-                        <i class="fa-solid ${rowDef.isParent ? 'fa-house text-amber-600' : 'fa-sun text-indigo-500'} text-xs"></i>
-                        <span>${rowDef.title}</span>
+                    <div class="flex items-center gap-1">
+                        <i class="fa-solid ${rowDef.isParent ? 'fa-house text-amber-600' : 'fa-sun text-indigo-500'} text-[10px]"></i>
+                        <span class="text-[11px]">${rowDef.title}</span>
                     </div>
                 `;
                 tr.appendChild(tdTitle);
 
                 childrenArr.forEach(c => {
                     const td = document.createElement('td');
-                    td.className = "p-2 min-w-[150px] w-[150px] border-l border-slate-200 text-center align-middle";
+                    td.className = "p-2 min-w-[130px] w-[130px] border-l border-slate-200 text-center align-middle";
                     td.innerHTML = rowDef.renderCell(c);
                     tr.appendChild(td);
                 });
@@ -557,12 +573,12 @@
             return `
                 <div class="space-y-1">
                     <div class="flex justify-center gap-1">
-                        <button onclick="updateField(${child.id}, '${statusKey}', 'V'); renderTable();" ${disabled ? 'disabled' : ''} 
-                            class="w-5 h-5 rounded text-[10px] font-bold ${status === 'V' ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}">✓</button>
-                        <button onclick="updateField(${child.id}, '${statusKey}', '1/2'); renderTable();" ${disabled ? 'disabled' : ''} 
-                            class="w-5 h-5 rounded text-[10px] font-bold ${status === '1/2' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-400'}">½</button>
-                        <button onclick="updateField(${child.id}, '${statusKey}', 'X'); renderTable();" ${disabled ? 'disabled' : ''} 
-                            class="w-5 h-5 rounded text-[10px] font-bold ${status === 'X' ? 'bg-rose-500 text-white' : 'bg-slate-100 text-slate-400'}">✕</button>
+                        <button type="button" onclick="setMealStatus(${child.id}, '${statusKey}', 'V')" ${disabled ? 'disabled' : ''} 
+                            class="w-5 h-5 rounded text-[10px] font-bold ${status === 'V' ? 'bg-emerald-500 text-white shadow-sm' : 'bg-slate-100 text-slate-400'}">✓</button>
+                        <button type="button" onclick="setMealStatus(${child.id}, '${statusKey}', '1/2')" ${disabled ? 'disabled' : ''} 
+                            class="w-5 h-5 rounded text-[10px] font-bold ${status === '1/2' ? 'bg-amber-500 text-white shadow-sm' : 'bg-slate-100 text-slate-400'}">½</button>
+                        <button type="button" onclick="setMealStatus(${child.id}, '${statusKey}', 'X')" ${disabled ? 'disabled' : ''} 
+                            class="w-5 h-5 rounded text-[10px] font-bold ${status === 'X' ? 'bg-rose-500 text-white shadow-sm' : 'bg-slate-100 text-slate-400'}">✕</button>
                     </div>
                     <input type="text" placeholder="הערה..." value="${child[noteKey] || ''}" ${disabled ? 'disabled' : ''} 
                         onchange="updateField(${child.id}, '${noteKey}', this.value)"
