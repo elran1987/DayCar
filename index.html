@@ -6,6 +6,8 @@
     <title>החממה של איתי - כיתת ניצן | מעקב יומי</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Rubik', sans-serif; }
@@ -30,7 +32,7 @@
     <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 transform transition-all duration-300 opacity-0 pointer-events-none translate-y-4">
         <div class="bg-emerald-600 text-white px-5 py-2.5 rounded-full shadow-lg flex items-center space-x-2 space-x-reverse font-medium text-xs">
             <i class="fa-solid fa-circle-check text-base"></i>
-            <span id="toast-msg">הנתונים נשמרו אוטומטית</span>
+            <span id="toast-msg">הנתונים נשמרו בענן ✓</span>
         </div>
     </div>
 
@@ -47,6 +49,9 @@
                         <span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-md text-xs font-bold border border-indigo-100">
                             <i class="fa-regular fa-calendar-days"></i>
                             <span id="current-date"></span>
+                        </span>
+                        <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md text-[11px] font-bold border border-emerald-100">
+                            <i class="fa-solid fa-cloud"></i> ענן פעיל
                         </span>
                     </div>
                 </div>
@@ -90,7 +95,7 @@
                 <i class="fa-solid fa-circle-info text-lg" id="role-banner-icon"></i>
                 <span class="text-sm font-medium" id="role-banner-text"></span>
             </div>
-            <span class="text-xs font-semibold opacity-75 hidden sm:inline">שמירה אוטומטית פעילה ✓</span>
+            <span class="text-xs font-semibold opacity-75 hidden sm:inline">סנכרון ענן אוטומטי ✓</span>
         </div>
 
         <!-- SEARCH / FILTER (Card View Only) -->
@@ -120,7 +125,7 @@
             </div>
 
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex">
-                <!-- Fixed Categories Column (No Sticky, perfectly static on the right) -->
+                <!-- Fixed Categories Column -->
                 <div class="w-36 min-w-[140px] bg-slate-100 border-l border-slate-200 flex-shrink-0 z-20 select-none">
                     <div class="p-3 bg-slate-200 font-bold text-center border-b border-slate-200 h-[53px] flex items-center justify-center text-xs text-slate-700">
                         קטגוריה / ילד
@@ -143,72 +148,128 @@
     </main>
 
     <script>
+        // --- SUPABASE CONFIG ---
+        const SUPABASE_URL = 'https://xabrcfhobgspangpwctw.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_IocaLr9H2IA2TnbyzSA8cQ_PoqhTrZn';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         const initialChildren = ["נריה", "דין", "בר", "שקד", "הלני", "לביא", "תמרה", "נטע", "עדי", "גל", "אי״ל", "ליה", "איתי", "ניב", "ריי"];
         
         let currentRole = localStorage.getItem('daycare_role') || 'parents'; 
         let currentView = 'cards';   
         let appData = {};
 
-        // Display Date & Day
-        const now = new Date();
-        document.getElementById('current-date').innerText = now.toLocaleDateString('he-IL', {
+        // Format today's date as YYYY-MM-DD for database keying
+        const todayDateObj = new Date();
+        const reportDateStr = todayDateObj.toISOString().split('T')[0];
+
+        // Display Date & Day in Header
+        document.getElementById('current-date').innerText = todayDateObj.toLocaleDateString('he-IL', {
             weekday: 'long',
             day: 'numeric',
             month: 'long',
             year: 'numeric'
         });
 
-        function buildInitialData() {
-            const data = {};
-            initialChildren.forEach((name, idx) => {
-                data[idx] = {
-                    id: idx,
-                    name: name,
-                    photo: '',
-                    wakeTime: '',
-                    homeFoodTime: '',
-                    homeFoodText: '',
-                    breakfastStatus: '',
-                    breakfastNote: '',
-                    morningSleepStart: '',
-                    morningSleepEnd: '',
-                    lunchStatus: '',
-                    lunchNote: '',
-                    noonSleepStart: '',
-                    noonSleepEnd: '',
-                    diapers: 0,
-                    snackStatus: '',
-                    snackNote: ''
-                };
-            });
-            return data;
+        function buildDefaultChild(idx, name) {
+            return {
+                id: idx,
+                report_date: reportDateStr,
+                name: name,
+                photo: '',
+                wakeTime: '',
+                homeFoodTime: '',
+                homeFoodText: '',
+                breakfastStatus: '',
+                breakfastNote: '',
+                morningSleepStart: '',
+                morningSleepEnd: '',
+                lunchStatus: '',
+                lunchNote: '',
+                noonSleepStart: '',
+                noonSleepEnd: '',
+                diapers: 0,
+                snackStatus: '',
+                snackNote: ''
+            };
         }
 
-        function initData() {
+        // Fetch data from Supabase
+        async function initData() {
             try {
-                const saved = localStorage.getItem('daycare_data_v13');
-                if (saved) {
-                    appData = JSON.parse(saved);
-                    if (appData && Object.keys(appData).length === initialChildren.length) {
-                        initialChildren.forEach((name, idx) => {
-                            if (appData[idx]) appData[idx].name = name;
-                        });
-                    } else {
-                        appData = buildInitialData();
-                    }
-                } else {
-                    appData = buildInitialData();
+                const { data, error } = await supabaseClient
+                    .from('daycare_reports')
+                    .select('*')
+                    .eq('report_date', reportDateStr);
+
+                if (error) throw error;
+
+                appData = {};
+                if (data && data.length > 0) {
+                    data.forEach(item => {
+                        appData[item.id] = item;
+                    });
                 }
-            } catch (e) {
-                appData = buildInitialData();
+
+                // Ensure all 15 children exist for today
+                initialChildren.forEach((name, idx) => {
+                    if (!appData[idx]) {
+                        appData[idx] = buildDefaultChild(idx, name);
+                    } else {
+                        appData[idx].name = name; // ensure correct name
+                    }
+                });
+
+                render();
+            } catch (err) {
+                console.error('Error loading from Supabase:', err);
+                // Fallback local structure if offline
+                appData = {};
+                initialChildren.forEach((name, idx) => {
+                    appData[idx] = buildDefaultChild(idx, name);
+                });
+                render();
             }
-            saveToStorage(false);
         }
 
-        function saveToStorage(showNotification = true) {
-            localStorage.setItem('daycare_data_v13', JSON.stringify(appData));
-            if (showNotification) {
-                showToast('נשמר אוטומטית');
+        // Save a single child's record to Supabase (Upsert)
+        async function updateFieldAndSync(id, field, value) {
+            if (appData[id]) {
+                appData[id][field] = value;
+                
+                // Optimistic UI update
+                if (currentView === 'cards') {
+                    // Avoid full re-render on inputs to prevent focus loss
+                } else {
+                    render();
+                }
+
+                showToast('מעדכן בענן...');
+
+                try {
+                    const { error } = await supabaseClient
+                        .from('daycare_reports')
+                        .upsert(appData[id], { onConflict: 'id, report_date' });
+
+                    if (error) throw error;
+                    showToast('נשמר בענן ✓');
+                } catch (err) {
+                    console.error('Error saving to Supabase:', err);
+                    showToast('שגיאה בשמירה בענן');
+                }
+            }
+        }
+
+        async function saveFullChild(id) {
+            try {
+                const { error } = await supabaseClient
+                    .from('daycare_reports')
+                    .upsert(appData[id], { onConflict: 'id, report_date' });
+
+                if (error) throw error;
+                showToast('נשמר בענן ✓');
+            } catch (err) {
+                console.error('Error saving child:', err);
             }
         }
 
@@ -223,13 +284,25 @@
             }, 2000);
         }
 
-        function resetDayData() {
-            if (confirm('האם לאפס את כל הנתונים של היום?')) {
-                localStorage.removeItem('daycare_data_v13');
-                appData = buildInitialData();
-                saveToStorage(false);
-                render();
-                showToast('הנתונים אופסו בהצלחה');
+        async function resetDayData() {
+            if (confirm('האם לאפס את כל הנתונים של היום בענן?')) {
+                try {
+                    const resetObj = {};
+                    initialChildren.forEach((name, idx) => {
+                        appData[idx] = buildDefaultChild(idx, name);
+                        resetObj[idx] = appData[idx];
+                    });
+
+                    // Upsert all defaults to Supabase
+                    for (let idx in appData) {
+                        await supabaseClient.from('daycare_reports').upsert(appData[idx], { onConflict: 'id, report_date' });
+                    }
+
+                    render();
+                    showToast('הנתונים אופסו בהצלחה');
+                } catch (err) {
+                    console.error('Error resetting:', err);
+                }
             }
         }
 
@@ -283,19 +356,12 @@
             render();
         }
 
-        function updateField(id, field, value) {
-            if (appData[id]) {
-                appData[id][field] = value;
-                saveToStorage(true);
-            }
-        }
-
         function handlePhotoUpload(id, input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     appData[id].photo = e.target.result;
-                    saveToStorage(true);
+                    saveFullChild(id);
                     render();
                 }
                 reader.readAsDataURL(input.files[0]);
@@ -306,7 +372,7 @@
             event.stopPropagation();
             if (confirm('האם להסיר את התמונה?')) {
                 appData[id].photo = '';
-                saveToStorage(true);
+                saveFullChild(id);
                 render();
             }
         }
@@ -373,19 +439,19 @@
                                     <div>
                                         <label class="block text-[11px] text-slate-500 mb-1">שעת התעוררות</label>
                                         <input type="time" value="${child.wakeTime || ''}" ${isStaffDisabled ? 'disabled' : ''} 
-                                            onchange="updateField(${child.id}, 'wakeTime', this.value)"
+                                            onchange="updateFieldAndSync(${child.id}, 'wakeTime', this.value)"
                                             class="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-amber-500 disabled:bg-slate-100">
                                     </div>
                                     <div>
                                         <label class="block text-[11px] text-slate-500 mb-1">אוכל בבית (שעה)</label>
                                         <input type="time" value="${child.homeFoodTime || ''}" ${isStaffDisabled ? 'disabled' : ''} 
-                                            onchange="updateField(${child.id}, 'homeFoodTime', this.value)"
+                                            onchange="updateFieldAndSync(${child.id}, 'homeFoodTime', this.value)"
                                             class="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-amber-500 disabled:bg-slate-100">
                                     </div>
                                 </div>
                                 <div>
                                     <input type="text" placeholder="פירוט אוכל בבית (מה אכל/ה)..." value="${child.homeFoodText || ''}" ${isStaffDisabled ? 'disabled' : ''} 
-                                        onchange="updateField(${child.id}, 'homeFoodText', this.value)"
+                                        onchange="updateFieldAndSync(${child.id}, 'homeFoodText', this.value)"
                                         class="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-amber-500 disabled:bg-slate-100">
                                 </div>
                             </div>
@@ -404,10 +470,10 @@
                                     <label class="block text-[11px] text-slate-500 mb-1">שנת בוקר (מ- עד)</label>
                                     <div class="grid grid-cols-2 gap-2">
                                         <input type="time" value="${child.morningSleepStart || ''}" ${isParentDisabled ? 'disabled' : ''} 
-                                            onchange="updateField(${child.id}, 'morningSleepStart', this.value)"
+                                            onchange="updateFieldAndSync(${child.id}, 'morningSleepStart', this.value)"
                                             class="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold disabled:bg-slate-100">
                                         <input type="time" value="${child.morningSleepEnd || ''}" ${isParentDisabled ? 'disabled' : ''} 
-                                            onchange="updateField(${child.id}, 'morningSleepEnd', this.value)"
+                                            onchange="updateFieldAndSync(${child.id}, 'morningSleepEnd', this.value)"
                                             class="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold disabled:bg-slate-100">
                                     </div>
                                 </div>
@@ -420,10 +486,10 @@
                                     <label class="block text-[11px] text-slate-500 mb-1">שנת צהריים (מ- עד)</label>
                                     <div class="grid grid-cols-2 gap-2">
                                         <input type="time" value="${child.noonSleepStart || ''}" ${isParentDisabled ? 'disabled' : ''} 
-                                            onchange="updateField(${child.id}, 'noonSleepStart', this.value)"
+                                            onchange="updateFieldAndSync(${child.id}, 'noonSleepStart', this.value)"
                                             class="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold disabled:bg-slate-100">
                                         <input type="time" value="${child.noonSleepEnd || ''}" ${isParentDisabled ? 'disabled' : ''} 
-                                            onchange="updateField(${child.id}, 'noonSleepEnd', this.value)"
+                                            onchange="updateFieldAndSync(${child.id}, 'noonSleepEnd', this.value)"
                                             class="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold disabled:bg-slate-100">
                                     </div>
                                 </div>
@@ -465,7 +531,7 @@
                         </div>
                     </div>
                     <input type="text" placeholder="הערה ל${title}..." value="${child[noteKey] || ''}" ${disabled ? 'disabled' : ''} 
-                        onchange="updateField(${child.id}, '${noteKey}', this.value)"
+                        onchange="updateFieldAndSync(${child.id}, '${noteKey}', this.value)"
                         class="w-full px-2 py-1 bg-white border border-slate-200 rounded text-[11px] focus:ring-1 focus:ring-indigo-500 disabled:bg-slate-100">
                 </div>
             `;
@@ -477,7 +543,7 @@
             } else {
                 appData[childId][statusKey] = val;
             }
-            saveToStorage(true);
+            saveFullChild(childId);
             if (currentView === 'cards') {
                 renderCards();
             } else {
@@ -489,7 +555,7 @@
             let current = appData[childId].diapers || 0;
             current = Math.max(0, current + delta);
             appData[childId].diapers = current;
-            saveToStorage(true);
+            saveFullChild(childId);
             const span = document.getElementById(`diapers-val-${childId}`);
             if (span) span.innerText = current;
             const tableSpan = document.getElementById(`table-diapers-val-${childId}`);
@@ -530,16 +596,16 @@
             const rowsDef = [
                 { title: 'שעת התעוררות', isParent: true, renderCell: (c) => `
                     <input type="time" value="${c.wakeTime || ''}" ${isStaffDisabled ? 'disabled' : ''} 
-                        onchange="updateField(${c.id}, 'wakeTime', this.value)"
+                        onchange="updateFieldAndSync(${c.id}, 'wakeTime', this.value)"
                         class="w-full px-1.5 py-1.5 bg-amber-50/50 border border-amber-200 rounded text-center text-xs font-bold focus:ring-1 focus:ring-amber-500">
                 `},
                 { title: 'אוכל בבית (שעה ופרוט)', isParent: true, renderCell: (c) => `
                     <div class="space-y-1">
                         <input type="time" value="${c.homeFoodTime || ''}" ${isStaffDisabled ? 'disabled' : ''} 
-                            onchange="updateField(${c.id}, 'homeFoodTime', this.value)"
+                            onchange="updateFieldAndSync(${c.id}, 'homeFoodTime', this.value)"
                             class="w-full px-1 py-0.5 border border-amber-200 rounded text-center text-xs font-semibold">
                         <input type="text" placeholder="מה אכל..." value="${c.homeFoodText || ''}" ${isStaffDisabled ? 'disabled' : ''} 
-                            onchange="updateField(${c.id}, 'homeFoodText', this.value)"
+                            onchange="updateFieldAndSync(${c.id}, 'homeFoodText', this.value)"
                             class="w-full px-1 py-0.5 border border-slate-200 rounded text-[10px]">
                     </div>
                 `},
@@ -547,10 +613,10 @@
                 { title: 'שנת בוקר', isParent: false, renderCell: (c) => `
                     <div class="space-y-1">
                         <input type="time" value="${c.morningSleepStart || ''}" ${isParentDisabled ? 'disabled' : ''} 
-                            onchange="updateField(${c.id}, 'morningSleepStart', this.value)"
+                            onchange="updateFieldAndSync(${c.id}, 'morningSleepStart', this.value)"
                             class="w-full px-1 py-0.5 border border-slate-200 rounded text-center text-xs">
                         <input type="time" value="${c.morningSleepEnd || ''}" ${isParentDisabled ? 'disabled' : ''} 
-                            onchange="updateField(${c.id}, 'morningSleepEnd', this.value)"
+                            onchange="updateFieldAndSync(${c.id}, 'morningSleepEnd', this.value)"
                             class="w-full px-1 py-0.5 border border-slate-200 rounded text-center text-xs">
                     </div>
                 `},
@@ -558,10 +624,10 @@
                 { title: 'שנת צהריים', isParent: false, renderCell: (c) => `
                     <div class="space-y-1">
                         <input type="time" value="${c.noonSleepStart || ''}" ${isParentDisabled ? 'disabled' : ''} 
-                            onchange="updateField(${c.id}, 'noonSleepStart', this.value)"
+                            onchange="updateFieldAndSync(${c.id}, 'noonSleepStart', this.value)"
                             class="w-full px-1 py-0.5 border border-slate-200 rounded text-center text-xs">
                         <input type="time" value="${c.noonSleepEnd || ''}" ${isParentDisabled ? 'disabled' : ''} 
-                            onchange="updateField(${c.id}, 'noonSleepEnd', this.value)"
+                            onchange="updateFieldAndSync(${c.id}, 'noonSleepEnd', this.value)"
                             class="w-full px-1 py-0.5 border border-slate-200 rounded text-center text-xs">
                     </div>
                 `},
@@ -575,7 +641,7 @@
                 { title: 'ארוחת ארבע', isParent: false, renderCell: (c) => renderTableMealCell(c, 'snackStatus', 'snackNote', isParentDisabled) }
             ];
 
-            // Render static categories column separately so it never jitters on mobile scroll
+            // Render static categories column
             rowsDef.forEach(rowDef => {
                 const catDiv = document.createElement('div');
                 catDiv.className = `p-2.5 font-semibold text-xs border-b border-slate-200 flex items-center gap-1 h-[68px] ${rowDef.isParent ? 'bg-amber-50/90 text-amber-900' : 'bg-slate-50 text-slate-700'}`;
@@ -615,7 +681,7 @@
                             class="w-5 h-5 rounded text-[10px] font-bold ${status === 'X' ? 'bg-rose-500 text-white shadow-sm' : 'bg-slate-100 text-slate-400'}">✕</button>
                     </div>
                     <input type="text" placeholder="הערה..." value="${child[noteKey] || ''}" ${disabled ? 'disabled' : ''} 
-                        onchange="updateField(${child.id}, '${noteKey}', this.value)"
+                        onchange="updateFieldAndSync(${child.id}, '${noteKey}', this.value)"
                         class="w-full px-1 py-0.5 border border-slate-200 rounded text-[10px]">
                 </div>
             `;
