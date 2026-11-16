@@ -10,31 +10,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Rubik', sans-serif; }
         
-        /* GPU Accelerated Sticky to prevent mobile flickering */
-        .sticky-col {
-            position: sticky;
-            right: 0;
-            z-index: 40;
-            background-color: #f8fafc !important;
-            transform: translateZ(0);
-            will-change: transform;
-        }
-        .sticky-corner {
-            position: sticky;
-            top: 0;
-            right: 0;
-            z-index: 60;
-            background-color: #e2e8f0 !important;
-            transform: translateZ(0);
-            will-change: transform;
-        }
-        .sticky-header {
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            background-color: #f1f5f9;
-            transform: translateZ(0);
-        }
         .custom-scrollbar::-webkit-scrollbar {
             height: 8px;
             width: 8px;
@@ -144,18 +119,22 @@
                 </div>
             </div>
 
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div id="table-scroll-container" class="overflow-x-auto overflow-y-auto custom-scrollbar max-h-[70vh]">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex">
+                <!-- Fixed Categories Column (No Sticky, perfectly static on the right) -->
+                <div class="w-36 min-w-[140px] bg-slate-100 border-l border-slate-200 flex-shrink-0 z-20 select-none">
+                    <div class="p-3 bg-slate-200 font-bold text-center border-b border-slate-200 h-[53px] flex items-center justify-center text-xs text-slate-700">
+                        קטגוריה / ילד
+                    </div>
+                    <div id="table-categories-col" class="flex flex-col"></div>
+                </div>
+
+                <!-- Scrollable Children Columns Container -->
+                <div id="table-scroll-container" class="overflow-x-auto overflow-y-auto custom-scrollbar max-h-[70vh] flex-1">
                     <table class="w-full border-collapse text-right text-xs">
                         <thead>
-                            <tr id="table-header-tr" class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200 sticky-header">
-                                <th class="p-3 w-36 min-w-[140px] sticky-corner border-l border-slate-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)] text-center">
-                                    קטגוריה / ילד
-                                </th>
-                            </tr>
+                            <tr id="table-header-tr" class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200 h-[53px]"></tr>
                         </thead>
-                        <tbody id="table-body" class="divide-y divide-slate-200">
-                        </tbody>
+                        <tbody id="table-body" class="divide-y divide-slate-200"></tbody>
                     </table>
                 </div>
             </div>
@@ -207,7 +186,7 @@
 
         function initData() {
             try {
-                const saved = localStorage.getItem('daycare_data_v12');
+                const saved = localStorage.getItem('daycare_data_v13');
                 if (saved) {
                     appData = JSON.parse(saved);
                     if (appData && Object.keys(appData).length === initialChildren.length) {
@@ -227,7 +206,7 @@
         }
 
         function saveToStorage(showNotification = true) {
-            localStorage.setItem('daycare_data_v12', JSON.stringify(appData));
+            localStorage.setItem('daycare_data_v13', JSON.stringify(appData));
             if (showNotification) {
                 showToast('נשמר אוטומטית');
             }
@@ -246,7 +225,7 @@
 
         function resetDayData() {
             if (confirm('האם לאפס את כל הנתונים של היום?')) {
-                localStorage.removeItem('daycare_data_v12');
+                localStorage.removeItem('daycare_data_v13');
                 appData = buildInitialData();
                 saveToStorage(false);
                 render();
@@ -519,17 +498,16 @@
 
         function renderTable() {
             const headerTr = document.getElementById('table-header-tr');
+            const categoriesCol = document.getElementById('table-categories-col');
             const body = document.getElementById('table-body');
 
-            headerTr.innerHTML = `
-                <th class="p-3 w-36 min-w-[140px] sticky-corner border-l border-slate-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)] text-center">
-                    קטגוריה / ילד
-                </th>
-            `;
+            headerTr.innerHTML = '';
+            categoriesCol.innerHTML = '';
             body.innerHTML = '';
 
             const childrenArr = Object.values(appData);
 
+            // Render children headers
             childrenArr.forEach(c => {
                 const avatarHtml = c.photo 
                     ? `<img src="${c.photo}" class="w-6 h-6 object-cover rounded-full inline-block ml-1 align-middle border border-indigo-200" />` 
@@ -553,7 +531,7 @@
                 { title: 'שעת התעוררות', isParent: true, renderCell: (c) => `
                     <input type="time" value="${c.wakeTime || ''}" ${isStaffDisabled ? 'disabled' : ''} 
                         onchange="updateField(${c.id}, 'wakeTime', this.value)"
-                        class="w-full px-1 py-1 bg-amber-50/50 border border-amber-200 rounded text-center text-xs font-bold focus:ring-1 focus:ring-amber-500">
+                        class="w-full px-1.5 py-1.5 bg-amber-50/50 border border-amber-200 rounded text-center text-xs font-bold focus:ring-1 focus:ring-amber-500">
                 `},
                 { title: 'אוכל בבית (שעה ופרוט)', isParent: true, renderCell: (c) => `
                     <div class="space-y-1">
@@ -597,19 +575,21 @@
                 { title: 'ארוחת ארבע', isParent: false, renderCell: (c) => renderTableMealCell(c, 'snackStatus', 'snackNote', isParentDisabled) }
             ];
 
+            // Render static categories column separately so it never jitters on mobile scroll
+            rowsDef.forEach(rowDef => {
+                const catDiv = document.createElement('div');
+                catDiv.className = `p-2.5 font-semibold text-xs border-b border-slate-200 flex items-center gap-1 h-[68px] ${rowDef.isParent ? 'bg-amber-50/90 text-amber-900' : 'bg-slate-50 text-slate-700'}`;
+                catDiv.innerHTML = `
+                    <i class="fa-solid ${rowDef.isParent ? 'fa-house text-amber-600' : 'fa-sun text-indigo-500'} text-[10px]"></i>
+                    <span class="text-[11px] leading-tight">${rowDef.title}</span>
+                `;
+                categoriesCol.appendChild(catDiv);
+            });
+
+            // Render table rows
             rowsDef.forEach(rowDef => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50/80 transition-colors";
-
-                const tdTitle = document.createElement('td');
-                tdTitle.className = `p-2.5 font-semibold text-xs sticky-col border-l border-slate-200 shadow-[2px_0_5px_rgba(0,0,0,0.03)] ${rowDef.isParent ? 'bg-amber-50/90 text-amber-900' : 'bg-slate-50 text-slate-700'}`;
-                tdTitle.innerHTML = `
-                    <div class="flex items-center gap-1">
-                        <i class="fa-solid ${rowDef.isParent ? 'fa-house text-amber-600' : 'fa-sun text-indigo-500'} text-[10px]"></i>
-                        <span class="text-[11px]">${rowDef.title}</span>
-                    </div>
-                `;
-                tr.appendChild(tdTitle);
+                tr.className = "hover:bg-slate-50/80 transition-colors h-[68px]";
 
                 childrenArr.forEach(c => {
                     const td = document.createElement('td');
