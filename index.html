@@ -13,20 +13,20 @@
         .sticky-col {
             position: sticky;
             right: 0;
-            z-index: 30;
-            background-color: #f8fafc;
+            z-index: 40;
+            background-color: #f8fafc !important;
         }
         .sticky-corner {
             position: sticky;
             top: 0;
             right: 0;
-            z-index: 50;
-            background-color: #e2e8f0;
+            z-index: 60;
+            background-color: #e2e8f0 !important;
         }
         .sticky-header {
             position: sticky;
             top: 0;
-            z-index: 40;
+            z-index: 50;
             background-color: #f1f5f9;
         }
         .custom-scrollbar::-webkit-scrollbar {
@@ -201,7 +201,7 @@
 
         function initData() {
             try {
-                const saved = localStorage.getItem('daycare_data_v9');
+                const saved = localStorage.getItem('daycare_data_v10');
                 if (saved) {
                     appData = JSON.parse(saved);
                     if (appData && Object.keys(appData).length === initialChildren.length) {
@@ -221,7 +221,7 @@
         }
 
         function saveToStorage(showNotification = true) {
-            localStorage.setItem('daycare_data_v9', JSON.stringify(appData));
+            localStorage.setItem('daycare_data_v10', JSON.stringify(appData));
             if (showNotification) {
                 showToast('נשמר אוטומטית');
             }
@@ -240,7 +240,7 @@
 
         function resetDayData() {
             if (confirm('האם לאפס את כל הנתונים של היום?')) {
-                localStorage.removeItem('daycare_data_v9');
+                localStorage.removeItem('daycare_data_v10');
                 appData = buildInitialData();
                 saveToStorage(false);
                 render();
@@ -539,7 +539,7 @@
                             class="w-full px-1 py-0.5 border border-amber-200 rounded text-center text-xs font-semibold">
                         <input type="text" placeholder="מה אכל..." value="${c.homeFoodText || ''}" ${isStaffDisabled ? 'disabled' : ''} 
                             onchange="updateField(${c.id}, 'homeFoodText', this.value)"
-                            class="w-full px-1 py-0.5 border border-amber-200 rounded text-[10px]">
+                            class="w-full px-1 py-0.5 border border-slate-200 rounded text-[10px]">
                     </div>
                 `},
                 { title: 'ארוחת בוקר', isParent: false, renderCell: (c) => renderTableMealCell(c, 'breakfastStatus', 'breakfastNote', isParentDisabled) },
