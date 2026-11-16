@@ -16,12 +16,6 @@
             z-index: 20;
             background-color: #f8fafc;
         }
-        .sticky-header {
-            position: sticky;
-            top: 0;
-            z-index: 30;
-            background-color: #f1f5f9;
-        }
         .sticky-corner {
             position: sticky;
             top: 0;
@@ -144,12 +138,10 @@
                 <div id="table-scroll-container" class="overflow-x-auto custom-scrollbar max-h-[75vh]">
                     <table class="w-full border-collapse text-right text-xs">
                         <thead>
-                            <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                            <tr id="table-header-tr" class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
                                 <th class="p-3 w-40 min-w-[160px] sticky-corner border-l border-slate-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)] text-center">
                                     קטגוריה / ילד
                                 </th>
-                                <!-- Child Headers Generated JS -->
-                                <th id="table-header-row" class="contents"></th>
                             </tr>
                         </thead>
                         <tbody id="table-body" class="divide-y divide-slate-200">
@@ -160,7 +152,7 @@
             
             <div class="mt-4 flex justify-end">
                 <button onclick="saveAllData()" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center gap-2">
-                    <i class="fa-solid fa-floppy-disk text-base"></i> שמור שינויים בלוקר
+                    <i class="fa-solid fa-floppy-disk text-base"></i> שמור שינויים
                 </button>
             </div>
         </div>
@@ -168,48 +160,59 @@
     </main>
 
     <script>
-        const initialChildren = ["נריה", "דין", "בר", "שקד", "הפעי", "לביא", "תמרה", "נטע", "עדי", "גל", "אי"ע", "ליה", "איתי", "ליב", "רי"];
+        const initialChildren = ["נריה", "דין", "בר", "שקד", "הפעי", "לביא", "תמרה", "נטע", "עדי", "גל", "אי״ע", "ליה", "איתי", "ליב", "רי"];
         
-        let currentRole = 'parents'; // 'parents' | 'staff'
-        let currentView = 'cards';   // 'cards' | 'table'
+        let currentRole = 'parents'; 
+        let currentView = 'cards';   
         let appData = {};
 
-        // Format Date Hebrew
         document.getElementById('current-date').innerText = new Date().toLocaleDateString('he-IL', {
             weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
         });
 
-        // Initialize Data
+        function buildInitialData() {
+            const data = {};
+            initialChildren.forEach((name, idx) => {
+                data[idx] = {
+                    id: idx,
+                    name: name,
+                    wakeTime: '',
+                    homeFoodTime: '',
+                    homeFoodText: '',
+                    breakfastStatus: '',
+                    breakfastNote: '',
+                    morningSleep: '',
+                    lunchStatus: '',
+                    lunchNote: '',
+                    noonSleepStart: '',
+                    noonSleepEnd: '',
+                    diapers: 0,
+                    snackStatus: '',
+                    snackNote: ''
+                };
+            });
+            return data;
+        }
+
         function initData() {
-            const saved = localStorage.getItem('daycare_data_v2');
-            if (saved) {
-                appData = JSON.parse(saved);
-            } else {
-                initialChildren.forEach((name, idx) => {
-                    appData[idx] = {
-                        id: idx,
-                        name: name,
-                        wakeTime: '',
-                        homeFoodTime: '',
-                        homeFoodText: '',
-                        breakfastStatus: '', // 'V', 'X', '1/2'
-                        breakfastNote: '',
-                        morningSleep: '',
-                        lunchStatus: '',
-                        lunchNote: '',
-                        noonSleepStart: '',
-                        noonSleepEnd: '',
-                        diapers: 0,
-                        snackStatus: '',
-                        snackNote: ''
-                    };
-                });
-                saveToStorage();
+            try {
+                const saved = localStorage.getItem('daycare_data_v3');
+                if (saved) {
+                    appData = JSON.parse(saved);
+                    if (!appData || Object.keys(appData).length === 0) {
+                        appData = buildInitialData();
+                    }
+                } else {
+                    appData = buildInitialData();
+                }
+            } catch (e) {
+                appData = buildInitialData();
             }
+            saveToStorage();
         }
 
         function saveToStorage() {
-            localStorage.setItem('daycare_data_v2', JSON.stringify(appData));
+            localStorage.setItem('daycare_data_v3', JSON.stringify(appData));
         }
 
         function showToast(msg = 'הנתונים נשמרו בהצלחה!') {
@@ -229,9 +232,10 @@
         }
 
         function resetDayData() {
-            if (confirm('האם איפס את כל הנתונים של היום?')) {
-                localStorage.removeItem('daycare_data_v2');
-                initData();
+            if (confirm('האם לאפס את כל הנתונים של היום?')) {
+                localStorage.removeItem('daycare_data_v3');
+                appData = buildInitialData();
+                saveToStorage();
                 render();
                 showToast('הנתונים אופסו בהצלחה');
             }
@@ -283,8 +287,10 @@
         }
 
         function updateField(id, field, value) {
-            appData[id][field] = value;
-            saveToStorage();
+            if (appData[id]) {
+                appData[id][field] = value;
+                saveToStorage();
+            }
         }
 
         function scrollTable(direction) {
@@ -297,7 +303,6 @@
             }
         }
 
-        // --- RENDER CARDS VIEW ---
         function renderCards() {
             const container = document.getElementById('cards-view');
             const query = document.getElementById('search-input')?.value.trim().toLowerCase() || '';
@@ -314,7 +319,6 @@
                 
                 card.innerHTML = `
                     <div class="p-5">
-                        <!-- Header -->
                         <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-base">
@@ -325,9 +329,7 @@
                             <span class="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 font-medium">#${child.id + 1}</span>
                         </div>
 
-                        <!-- Fields Grid -->
                         <div class="space-y-4">
-
                             <!-- Parent Section -->
                             <div class="p-3 bg-amber-50/60 rounded-xl border border-amber-100 space-y-3">
                                 <div class="flex items-center justify-between text-xs font-bold text-amber-900 mb-1">
@@ -336,19 +338,19 @@
                                 <div class="grid grid-cols-2 gap-3">
                                     <div>
                                         <label class="block text-[11px] text-slate-500 mb-1">שעת התעוררות</label>
-                                        <input type="time" value="${child.wakeTime}" ${isStaffDisabled ? 'disabled' : ''} 
+                                        <input type="time" value="${child.wakeTime || ''}" ${isStaffDisabled ? 'disabled' : ''} 
                                             onchange="updateField(${child.id}, 'wakeTime', this.value)"
                                             class="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-amber-500 disabled:bg-slate-100">
                                     </div>
                                     <div>
                                         <label class="block text-[11px] text-slate-500 mb-1">אוכל בבית (שעה)</label>
-                                        <input type="time" value="${child.homeFoodTime}" ${isStaffDisabled ? 'disabled' : ''} 
+                                        <input type="time" value="${child.homeFoodTime || ''}" ${isStaffDisabled ? 'disabled' : ''} 
                                             onchange="updateField(${child.id}, 'homeFoodTime', this.value)"
                                             class="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-amber-500 disabled:bg-slate-100">
                                     </div>
                                 </div>
                                 <div>
-                                    <input type="text" placeholder="פירוט אוכל בבית (מה אכל/ה)..." value="${child.homeFoodText}" ${isStaffDisabled ? 'disabled' : ''} 
+                                    <input type="text" placeholder="פירוט אוכל בבית (מה אכל/ה)..." value="${child.homeFoodText || ''}" ${isStaffDisabled ? 'disabled' : ''} 
                                         onchange="updateField(${child.id}, 'homeFoodText', this.value)"
                                         class="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-amber-500 disabled:bg-slate-100">
                                 </div>
@@ -360,22 +362,21 @@
                                     <span><i class="fa-solid fa-sun text-indigo-600 ml-1"></i> מעקב במהלך היום (צוות)</span>
                                 </div>
 
-                                <!-- Meals Component helper -->
                                 ${renderMealRow(child, 'breakfastStatus', 'breakfastNote', 'ארוחת בוקר', isParentDisabled)}
                                 
                                 <div class="grid grid-cols-2 gap-2 pt-1 border-t border-indigo-100/60">
                                     <div>
                                         <label class="block text-[11px] text-slate-500 mb-1">שנת בוקר</label>
-                                        <input type="time" value="${child.morningSleep}" ${isParentDisabled ? 'disabled' : ''} 
+                                        <input type="time" value="${child.morningSleep || ''}" ${isParentDisabled ? 'disabled' : ''} 
                                             onchange="updateField(${child.id}, 'morningSleep', this.value)"
                                             class="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold disabled:bg-slate-100">
                                     </div>
                                     <div>
                                         <label class="block text-[11px] text-slate-500 mb-1">החלפות חיתול</label>
                                         <div class="flex items-center gap-1">
-                                            <button onclick="updateField(${child.id}, 'diapers', Math.max(0, ${child.diapers - 1})); renderCards();" ${isParentDisabled ? 'disabled' : ''} class="px-2 py-1 bg-slate-200 rounded font-bold text-xs hover:bg-slate-300 disabled:opacity-50">-</button>
-                                            <span class="px-3 py-1 font-bold text-xs bg-white rounded border border-slate-200 flex-1 text-center">${child.diapers}</span>
-                                            <button onclick="updateField(${child.id}, 'diapers', ${child.diapers + 1}); renderCards();" ${isParentDisabled ? 'disabled' : ''} class="px-2 py-1 bg-indigo-600 text-white rounded font-bold text-xs hover:bg-indigo-700 disabled:opacity-50">+</button>
+                                            <button onclick="updateField(${child.id}, 'diapers', Math.max(0, ${(child.diapers || 0) - 1})); renderCards();" ${isParentDisabled ? 'disabled' : ''} class="px-2 py-1 bg-slate-200 rounded font-bold text-xs hover:bg-slate-300 disabled:opacity-50">-</button>
+                                            <span class="px-3 py-1 font-bold text-xs bg-white rounded border border-slate-200 flex-1 text-center">${child.diapers || 0}</span>
+                                            <button onclick="updateField(${child.id}, 'diapers', ${(child.diapers || 0) + 1}); renderCards();" ${isParentDisabled ? 'disabled' : ''} class="px-2 py-1 bg-indigo-600 text-white rounded font-bold text-xs hover:bg-indigo-700 disabled:opacity-50">+</button>
                                         </div>
                                     </div>
                                 </div>
@@ -385,10 +386,10 @@
                                 <div class="pt-1 border-t border-indigo-100/60">
                                     <label class="block text-[11px] text-slate-500 mb-1">שנת צהריים (מ- עד)</label>
                                     <div class="grid grid-cols-2 gap-2">
-                                        <input type="time" value="${child.noonSleepStart}" ${isParentDisabled ? 'disabled' : ''} 
+                                        <input type="time" value="${child.noonSleepStart || ''}" ${isParentDisabled ? 'disabled' : ''} 
                                             onchange="updateField(${child.id}, 'noonSleepStart', this.value)"
                                             class="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold disabled:bg-slate-100">
-                                        <input type="time" value="${child.noonSleepEnd}" ${isParentDisabled ? 'disabled' : ''} 
+                                        <input type="time" value="${child.noonSleepEnd || ''}" ${isParentDisabled ? 'disabled' : ''} 
                                             onchange="updateField(${child.id}, 'noonSleepEnd', this.value)"
                                             class="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold disabled:bg-slate-100">
                                     </div>
@@ -400,10 +401,9 @@
                         </div>
                     </div>
 
-                    <!-- Footer Save Button -->
                     <div class="p-3 bg-slate-50 border-t border-slate-100 text-left">
                         <button onclick="saveAllData()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-check"></i> שמור כרטיסיה
+                            <i class="fa-solid fa-check"></i> שמור דיווח
                         </button>
                     </div>
                 `;
@@ -433,17 +433,19 @@
             `;
         }
 
-        // --- RENDER TABLE VIEW (WHITEBOARD) ---
         function renderTable() {
-            const headerRow = document.getElementById('table-header-row');
+            const headerTr = document.getElementById('table-header-tr');
             const body = document.getElementById('table-body');
 
-            headerRow.innerHTML = '';
+            headerTr.innerHTML = `
+                <th class="p-3 w-40 min-w-[160px] sticky-corner border-l border-slate-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)] text-center">
+                    קטגוריה / ילד
+                </th>
+            `;
             body.innerHTML = '';
 
             const childrenArr = Object.values(appData);
 
-            // 1. Render Header Row (Children Names)
             childrenArr.forEach(c => {
                 const th = document.createElement('th');
                 th.className = "p-3 min-w-[150px] w-[150px] text-center font-bold text-indigo-900 border-l border-slate-200 bg-slate-100";
@@ -453,48 +455,47 @@
                         <span class="text-sm">${c.name}</span>
                     </div>
                 `;
-                headerRow.appendChild(th);
+                headerTr.appendChild(th);
             });
 
-            // Rows Configuration
             const rowsDef = [
                 { title: 'שעת התעוררות', isParent: true, renderCell: (c) => `
-                    <input type="time" value="${c.wakeTime}" ${currentRole === 'staff' ? 'disabled' : ''} 
+                    <input type="time" value="${c.wakeTime || ''}" ${currentRole === 'staff' ? 'disabled' : ''} 
                         onchange="updateField(${c.id}, 'wakeTime', this.value)"
                         class="w-full px-2 py-1 bg-amber-50/50 border border-amber-200 rounded text-center text-xs font-bold focus:ring-1 focus:ring-amber-500">
                 `},
                 { title: 'אוכל בבית (שעה ופרוט)', isParent: true, renderCell: (c) => `
                     <div class="space-y-1">
-                        <input type="time" value="${c.homeFoodTime}" ${currentRole === 'staff' ? 'disabled' : ''} 
+                        <input type="time" value="${c.homeFoodTime || ''}" ${currentRole === 'staff' ? 'disabled' : ''} 
                             onchange="updateField(${c.id}, 'homeFoodTime', this.value)"
                             class="w-full px-1 py-0.5 border border-amber-200 rounded text-center text-xs font-semibold">
-                        <input type="text" placeholder="מה אכל..." value="${c.homeFoodText}" ${currentRole === 'staff' ? 'disabled' : ''} 
+                        <input type="text" placeholder="מה אכל..." value="${c.homeFoodText || ''}" ${currentRole === 'staff' ? 'disabled' : ''} 
                             onchange="updateField(${c.id}, 'homeFoodText', this.value)"
                             class="w-full px-1.5 py-0.5 border border-amber-200 rounded text-[11px]">
                     </div>
                 `},
                 { title: 'ארוחת בוקר', isParent: false, renderCell: (c) => renderTableMealCell(c, 'breakfastStatus', 'breakfastNote') },
                 { title: 'שנת בוקר', isParent: false, renderCell: (c) => `
-                    <input type="time" value="${c.morningSleep}" ${currentRole === 'parents' ? 'disabled' : ''} 
+                    <input type="time" value="${c.morningSleep || ''}" ${currentRole === 'parents' ? 'disabled' : ''} 
                         onchange="updateField(${c.id}, 'morningSleep', this.value)"
                         class="w-full px-2 py-1 border border-slate-200 rounded text-center text-xs font-semibold">
                 `},
                 { title: 'ארוחת צהריים', isParent: false, renderCell: (c) => renderTableMealCell(c, 'lunchStatus', 'lunchNote') },
                 { title: 'שנת צהריים', isParent: false, renderCell: (c) => `
                     <div class="space-y-1">
-                        <input type="time" value="${c.noonSleepStart}" ${currentRole === 'parents' ? 'disabled' : ''} 
+                        <input type="time" value="${c.noonSleepStart || ''}" ${currentRole === 'parents' ? 'disabled' : ''} 
                             onchange="updateField(${c.id}, 'noonSleepStart', this.value)"
                             class="w-full px-1 py-0.5 border border-slate-200 rounded text-center text-xs">
-                        <input type="time" value="${c.noonSleepEnd}" ${currentRole === 'parents' ? 'disabled' : ''} 
+                        <input type="time" value="${c.noonSleepEnd || ''}" ${currentRole === 'parents' ? 'disabled' : ''} 
                             onchange="updateField(${c.id}, 'noonSleepEnd', this.value)"
                             class="w-full px-1 py-0.5 border border-slate-200 rounded text-center text-xs">
                     </div>
                 `},
                 { title: 'החלפות חיתול', isParent: false, renderCell: (c) => `
                     <div class="flex items-center justify-center gap-1">
-                        <button onclick="updateField(${c.id}, 'diapers', Math.max(0, ${c.diapers - 1})); renderTable();" ${currentRole === 'parents' ? 'disabled' : ''} class="w-5 h-5 bg-slate-200 rounded font-bold text-xs flex items-center justify-center">-</button>
-                        <span class="font-bold text-xs w-6 text-center">${c.diapers}</span>
-                        <button onclick="updateField(${c.id}, 'diapers', ${c.diapers + 1}); renderTable();" ${currentRole === 'parents' ? 'disabled' : ''} class="w-5 h-5 bg-indigo-600 text-white rounded font-bold text-xs flex items-center justify-center">+</button>
+                        <button onclick="updateField(${c.id}, 'diapers', Math.max(0, ${(c.diapers || 0) - 1})); renderTable();" ${currentRole === 'parents' ? 'disabled' : ''} class="w-5 h-5 bg-slate-200 rounded font-bold text-xs flex items-center justify-center">-</button>
+                        <span class="font-bold text-xs w-6 text-center">${c.diapers || 0}</span>
+                        <button onclick="updateField(${c.id}, 'diapers', ${(c.diapers || 0) + 1}); renderTable();" ${currentRole === 'parents' ? 'disabled' : ''} class="w-5 h-5 bg-indigo-600 text-white rounded font-bold text-xs flex items-center justify-center">+</button>
                     </div>
                 `},
                 { title: 'ארוחת ארבע', isParent: false, renderCell: (c) => renderTableMealCell(c, 'snackStatus', 'snackNote') }
@@ -504,7 +505,6 @@
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50/80 transition-colors";
 
-                // Title Sticky Cell
                 const tdTitle = document.createElement('td');
                 tdTitle.className = `p-3 font-semibold text-xs sticky-col border-l border-slate-200 shadow-[2px_0_5px_rgba(0,0,0,0.03)] ${rowDef.isParent ? 'bg-amber-50/80 text-amber-900' : 'bg-slate-50 text-slate-700'}`;
                 tdTitle.innerHTML = `
@@ -515,7 +515,6 @@
                 `;
                 tr.appendChild(tdTitle);
 
-                // Children Cells
                 childrenArr.forEach(c => {
                     const td = document.createElement('td');
                     td.className = "p-2 min-w-[150px] w-[150px] border-l border-slate-200 text-center align-middle";
